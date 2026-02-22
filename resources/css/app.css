@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.sent.active {
+    background: #fde68a;
+    border-radius: 4px;
+}
