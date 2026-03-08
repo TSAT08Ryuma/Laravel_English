@@ -3,24 +3,22 @@ const output = document.getElementById("output");
 
 let currentUtterance = null;
 let sentences = [];
-const START_WORD = "uh. . . . . . .";
-const offset = START_WORD.length;
 
-const PLAY_LABEL = "▶ 再生";
-const PAUSE_LABEL = "⏸ 一時停止";
-const RESUME_LABEL = "▶ 再開";
+const PLAY_LABEL = "\u25B6 \u518d\u751f";
+const PAUSE_LABEL = "\u23F8 \u4e00\u6642\u505c\u6b62";
+const RESUME_LABEL = "\u25B6 \u518d\u958b";
 
 let playbackState = "idle"; // idle | playing | paused
+let pauseMode = "none"; // none | native | fallback
 let currentText = "";
-let resumeCharIndex = 0;
-let chunkStartIndex = 0;
+let currentSentenceIndex = 0;
 
 function escapeHtml(s) {
     return s
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
+        .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#39;");
 }
 
@@ -38,81 +36,72 @@ function renderSentences(text) {
         .join("");
 }
 
-function highlight(charIndex) {
-    const spans = document.querySelectorAll(".sent");
-    if (!spans.length || !sentences.length) return;
-
-    let acc = 0;
-    for (let i = 0; i < sentences.length; i++) {
-        const start = acc;
-        const end = acc + sentences[i].length;
-        if (charIndex >= start && charIndex < end) {
-            spans.forEach((s) => s.classList.remove("active"));
-            spans[i].classList.add("active");
-            break;
-        }
-        acc = end + 1;
-    }
+function clearHighlight() {
+    document.querySelectorAll(".sent").forEach((s) => s.classList.remove("active"));
 }
 
+function highlightSentence(index) {
+    const spans = document.querySelectorAll(".sent");
+    if (!spans.length) return;
+
+    spans.forEach((s) => s.classList.remove("active"));
+    if (spans[index]) spans[index].classList.add("active");
+}
 
 function setPlayButtonLabel(label) {
     if (!playBtn) return;
     playBtn.textContent = label;
 }
 
-function finalizePlayback() {
+function finalizePlayback(resetIndex = true) {
     playbackState = "idle";
+    pauseMode = "none";
     currentUtterance = null;
-    resumeCharIndex = 0;
-    chunkStartIndex = 0;
+
+    if (resetIndex) {
+        currentSentenceIndex = 0;
+        clearHighlight();
+    }
+
     setPlayButtonLabel(PLAY_LABEL);
 }
 
-function startSpeakingFromIndex(startIndex) {
-    if (!currentText) return;
-
-    const safeStart = Math.max(0, Math.min(startIndex, currentText.length));
-    const remaining = currentText.slice(safeStart);
-
-    if (!remaining.trim()) {
-        finalizePlayback();
+function speakSentence(index) {
+    if (!currentText || index >= sentences.length) {
+        finalizePlayback(true);
         return;
     }
 
-    chunkStartIndex = safeStart;
-    const utterance = new SpeechSynthesisUtterance(START_WORD + remaining);
+    currentSentenceIndex = index;
+
+    const utterance = new SpeechSynthesisUtterance(sentences[index]);
     utterance.lang = "en-US";
     utterance.rate = 1.0;
 
-    utterance.onboundary = (event) => {
-        const localIdx = Math.max(0, event.charIndex - offset);
-        const idx = Math.min(currentText.length, chunkStartIndex + localIdx);
-        resumeCharIndex = idx;
-        highlight(idx);
+    utterance.onstart = () => {
+        highlightSentence(index);
     };
 
     utterance.onend = () => {
-        if (playbackState === "paused") return;
-        finalizePlayback();
+        if (playbackState !== "playing") return;
+        currentSentenceIndex = index + 1;
+        speakSentence(currentSentenceIndex);
     };
 
     utterance.onerror = () => {
-        if (playbackState === "paused") return;
-        finalizePlayback();
+        if (playbackState !== "playing") return;
+        finalizePlayback(false);
     };
 
     currentUtterance = utterance;
-    playbackState = "playing";
     speechSynthesis.cancel();
     setTimeout(() => speechSynthesis.speak(utterance), 0);
-    setPlayButtonLabel(PAUSE_LABEL);
 }
 
 function stopTTS() {
     try { speechSynthesis.cancel(); } catch {}
     currentText = "";
-    finalizePlayback();
+    finalizePlayback(true);
 }
 
 if (playBtn && output) {
@@ -120,45 +109,50 @@ if (playBtn && output) {
         const text = (output.textContent || "").trim();
         if (!text) return;
 
-        renderSentences(text);
-
         const isNewText = currentText !== text;
         if (isNewText) {
             currentText = text;
-            resumeCharIndex = 0;
-            chunkStartIndex = 0;
+            currentSentenceIndex = 0;
+            renderSentences(text);
+            clearHighlight();
         }
 
         if (playbackState === "playing") {
             speechSynthesis.pause();
 
-            // Mobile Chrome can ignore pause(); fallback to cancel + index resume.
+            // Mobile Chrome may ignore pause(). Fallback keeps sentence index.
             setTimeout(() => {
                 if (speechSynthesis.paused) {
-                    playbackState = "paused";
-                    setPlayButtonLabel(RESUME_LABEL);
-                    return;
+                    pauseMode = "native";
+                } else {
+                    pauseMode = "fallback";
+                    try { speechSynthesis.cancel(); } catch {}
                 }
 
                 playbackState = "paused";
-                try { speechSynthesis.cancel(); } catch {}
                 setPlayButtonLabel(RESUME_LABEL);
             }, 120);
             return;
         }
 
         if (playbackState === "paused") {
-            if (speechSynthesis.paused) {
+            if (pauseMode === "native" && speechSynthesis.paused) {
                 speechSynthesis.resume();
                 playbackState = "playing";
                 setPlayButtonLabel(PAUSE_LABEL);
                 return;
             }
 
-            startSpeakingFromIndex(resumeCharIndex);
+            playbackState = "playing";
+            setPlayButtonLabel(PAUSE_LABEL);
+            speakSentence(currentSentenceIndex); // restart from current sentence head
             return;
         }
-        startSpeakingFromIndex(0);
+
+        playbackState = "playing";
+        pauseMode = "none";
+        setPlayButtonLabel(PAUSE_LABEL);
+        speakSentence(currentSentenceIndex);
     });
 }
 
@@ -166,8 +160,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("tr[data-content]").forEach((tr) => {
         tr.addEventListener("click", (e) => {
             if (e.target.closest("form")) return;
+
             const text = tr.dataset.content || "";
             if (!output || !text) return;
+
             renderSentences(text);
             stopTTS();
         });
