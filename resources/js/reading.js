@@ -94,15 +94,9 @@ function startSpeakingFromIndex(startIndex) {
     utterance.rate = 1.0;
 
     utterance.onboundary = (event) => {
-        if (!progressBar || !progressText) return;
-
         const localIdx = Math.max(0, event.charIndex - offset);
         const idx = Math.min(currentText.length, chunkStartIndex + localIdx);
         resumeCharIndex = idx;
-
-        const percent = Math.min(100, Math.floor((idx / currentText.length) * 100));
-        progressBar.value = percent;
-        progressText.textContent = `${percent}%`;
         highlight(idx);
     };
 
@@ -192,5 +186,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.addEventListener("beforeunload", stopTTS);
 window.addEventListener("pagehide", stopTTS);
-
-
