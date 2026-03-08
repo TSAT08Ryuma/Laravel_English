@@ -1,0 +1,29 @@
+[33mcommit 14e23f1338d6d4c325216766786bd48e9ea38788[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: TSAT08Ryuma <seimei728@gmail.com>
+Date:   Sun Mar 8 22:05:29 2026 +0900
+
+    スマホ対応案
+
+[33mcommit 4d1faebb58db595d6ffc3e1fb099787cd60ef032[m
+Author: TSAT08Ryuma <rshima1992@gmail.com>
+Date:   Mon Mar 2 19:40:34 2026 +0900
+
+    Track Vite build output
+
+[33mcommit 218330a1b42c7d52a38ad0d0fcdd208534804027[m
+Author: TSAT08Ryuma <rshima1992@gmail.com>
+Date:   Mon Mar 2 19:33:34 2026 +0900
+
+    Update package-lock
+
+[33mcommit a30887d3e571fe9b011dfcbbea8d12c994d906e1[m
+Author: TSAT08Ryuma <rshima1992@gmail.com>
+Date:   Mon Mar 2 06:36:19 2026 +0900
+
+    Fix deps for PHP 8.3
+
+[33mcommit cfeb9d960ee278de8c29ffe80e35920623b91c4f[m
+Author: TSAT08Ryuma <seimei728@gmail.com>
+Date:   Mon Mar 2 05:12:58 2026 +0900
+
+    Ignore Zone.Identifier files
