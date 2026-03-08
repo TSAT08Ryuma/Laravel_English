@@ -48,11 +48,6 @@
 
             <div class="mb-3 flex flex-wrap items-center gap-3">
                 <button id="play" type="button" class="px-4 py-2 bg-gray-800 text-white rounded">▶ 再生</button>
-                <div>
-                    <label for="progress_bar" class="text-sm text-gray-600">進捗</label>
-                    <progress id="progress_bar" max="100" value="0"></progress>
-                    <span id="progress_text" class="text-sm">0%</span>
-                </div>
             </div>
 
             <pre id="output" class="whitespace-pre-wrap text-sm">{{ $result ?? '' }}</pre>

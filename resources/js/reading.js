@@ -1,7 +1,5 @@
 const playBtn = document.getElementById("play");
 const output = document.getElementById("output");
-const progressBar = document.getElementById("progress_bar");
-const progressText = document.getElementById("progress_text");
 
 let currentUtterance = null;
 let sentences = [];
@@ -57,11 +55,6 @@ function highlight(charIndex) {
     }
 }
 
-function resetProgress() {
-    if (!progressBar || !progressText) return;
-    progressBar.value = 0;
-    progressText.textContent = "0%";
-}
 
 function setPlayButtonLabel(label) {
     if (!playBtn) return;
@@ -74,7 +67,6 @@ function finalizePlayback() {
     resumeCharIndex = 0;
     chunkStartIndex = 0;
     setPlayButtonLabel(PLAY_LABEL);
-    resetProgress();
 }
 
 function startSpeakingFromIndex(startIndex) {
@@ -166,8 +158,6 @@ if (playBtn && output) {
             startSpeakingFromIndex(resumeCharIndex);
             return;
         }
-
-        resetProgress();
         startSpeakingFromIndex(0);
     });
 }
