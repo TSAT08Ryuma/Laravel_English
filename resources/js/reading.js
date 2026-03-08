@@ -8,6 +8,15 @@ let sentences = [];
 const START_WORD = "uh. . . . . . .";
 const offset = START_WORD.length;
 
+const PLAY_LABEL = "▶ 再生";
+const PAUSE_LABEL = "⏸ 一時停止";
+const RESUME_LABEL = "▶ 再開";
+
+let playbackState = "idle"; // idle | playing | paused
+let currentText = "";
+let resumeCharIndex = 0;
+let chunkStartIndex = 0;
+
 function escapeHtml(s) {
     return s
         .replace(/&/g, "&amp;")
@@ -54,11 +63,70 @@ function resetProgress() {
     progressText.textContent = "0%";
 }
 
+function setPlayButtonLabel(label) {
+    if (!playBtn) return;
+    playBtn.textContent = label;
+}
+
+function finalizePlayback() {
+    playbackState = "idle";
+    currentUtterance = null;
+    resumeCharIndex = 0;
+    chunkStartIndex = 0;
+    setPlayButtonLabel(PLAY_LABEL);
+    resetProgress();
+}
+
+function startSpeakingFromIndex(startIndex) {
+    if (!currentText) return;
+
+    const safeStart = Math.max(0, Math.min(startIndex, currentText.length));
+    const remaining = currentText.slice(safeStart);
+
+    if (!remaining.trim()) {
+        finalizePlayback();
+        return;
+    }
+
+    chunkStartIndex = safeStart;
+    const utterance = new SpeechSynthesisUtterance(START_WORD + remaining);
+    utterance.lang = "en-US";
+    utterance.rate = 1.0;
+
+    utterance.onboundary = (event) => {
+        if (!progressBar || !progressText) return;
+
+        const localIdx = Math.max(0, event.charIndex - offset);
+        const idx = Math.min(currentText.length, chunkStartIndex + localIdx);
+        resumeCharIndex = idx;
+
+        const percent = Math.min(100, Math.floor((idx / currentText.length) * 100));
+        progressBar.value = percent;
+        progressText.textContent = `${percent}%`;
+        highlight(idx);
+    };
+
+    utterance.onend = () => {
+        if (playbackState === "paused") return;
+        finalizePlayback();
+    };
+
+    utterance.onerror = () => {
+        if (playbackState === "paused") return;
+        finalizePlayback();
+    };
+
+    currentUtterance = utterance;
+    playbackState = "playing";
+    speechSynthesis.cancel();
+    setTimeout(() => speechSynthesis.speak(utterance), 0);
+    setPlayButtonLabel(PAUSE_LABEL);
+}
+
 function stopTTS() {
     try { speechSynthesis.cancel(); } catch {}
-    currentUtterance = null;
-    if (playBtn) playBtn.textContent = "▶ 再生";
-    resetProgress();
+    currentText = "";
+    finalizePlayback();
 }
 
 if (playBtn && output) {
@@ -68,48 +136,45 @@ if (playBtn && output) {
 
         renderSentences(text);
 
-        if (speechSynthesis.speaking && !speechSynthesis.paused) {
+        const isNewText = currentText !== text;
+        if (isNewText) {
+            currentText = text;
+            resumeCharIndex = 0;
+            chunkStartIndex = 0;
+        }
+
+        if (playbackState === "playing") {
             speechSynthesis.pause();
-            playBtn.textContent = "▶ 再開";
+
+            // Mobile Chrome can ignore pause(); fallback to cancel + index resume.
+            setTimeout(() => {
+                if (speechSynthesis.paused) {
+                    playbackState = "paused";
+                    setPlayButtonLabel(RESUME_LABEL);
+                    return;
+                }
+
+                playbackState = "paused";
+                try { speechSynthesis.cancel(); } catch {}
+                setPlayButtonLabel(RESUME_LABEL);
+            }, 120);
             return;
         }
 
-        if (speechSynthesis.paused) {
-            speechSynthesis.resume();
-            playBtn.textContent = "⏸ 一時停止";
+        if (playbackState === "paused") {
+            if (speechSynthesis.paused) {
+                speechSynthesis.resume();
+                playbackState = "playing";
+                setPlayButtonLabel(PAUSE_LABEL);
+                return;
+            }
+
+            startSpeakingFromIndex(resumeCharIndex);
             return;
         }
 
-        const utterance = new SpeechSynthesisUtterance(START_WORD + text);
-        utterance.lang = "en-US";
-        utterance.rate = 1.0;
-
-        utterance.onboundary = (event) => {
-            if (!progressBar || !progressText) return;
-            const idx = Math.max(0, event.charIndex - offset);
-            const percent = Math.min(100, Math.floor((idx / text.length) * 100));
-            progressBar.value = percent;
-            progressText.textContent = `${percent}%`;
-            highlight(idx);
-        };
-
-        utterance.onend = () => {
-            playBtn.textContent = "▶ 再生";
-            resetProgress();
-            currentUtterance = null;
-        };
-
-        utterance.onerror = () => {
-            playBtn.textContent = "▶ 再生";
-            resetProgress();
-            currentUtterance = null;
-        };
-
-        currentUtterance = utterance;
-        speechSynthesis.cancel();
         resetProgress();
-        setTimeout(() => speechSynthesis.speak(utterance), 0);
-        playBtn.textContent = "⏸ 一時停止";
+        startSpeakingFromIndex(0);
     });
 }
 
@@ -127,3 +192,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.addEventListener("beforeunload", stopTTS);
 window.addEventListener("pagehide", stopTTS);
+
+
