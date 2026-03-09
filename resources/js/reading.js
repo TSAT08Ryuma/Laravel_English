@@ -1,5 +1,6 @@
 const playBtn = document.getElementById("play");
 const output = document.getElementById("output");
+const speedSelect = document.getElementById("speed_rate");
 
 let currentUtterance = null;
 let sentences = [];
@@ -12,6 +13,7 @@ let playbackState = "idle"; // idle | playing | paused
 let pauseMode = "none"; // none | native | fallback
 let currentText = "";
 let currentSentenceIndex = 0;
+let currentRate = 1.0;
 
 function escapeHtml(s) {
     return s
@@ -67,16 +69,20 @@ function finalizePlayback(resetIndex = true) {
 }
 
 function speakSentence(index) {
-    if (!currentText || index >= sentences.length) {
+    if (!currentText || !sentences.length) {
         finalizePlayback(true);
         return;
+    }
+
+    if (index >= sentences.length) {
+        index = 0;
     }
 
     currentSentenceIndex = index;
 
     const utterance = new SpeechSynthesisUtterance(sentences[index]);
     utterance.lang = "en-US";
-    utterance.rate = 1.0;
+    utterance.rate = currentRate;
 
     utterance.onstart = () => {
         highlightSentence(index);
@@ -84,7 +90,7 @@ function speakSentence(index) {
 
     utterance.onend = () => {
         if (playbackState !== "playing") return;
-        currentSentenceIndex = index + 1;
+        currentSentenceIndex = (index + 1) % sentences.length;
         speakSentence(currentSentenceIndex);
     };
 
@@ -102,6 +108,26 @@ function stopTTS() {
     try { speechSynthesis.cancel(); } catch {}
     currentText = "";
     finalizePlayback(true);
+}
+
+if (speedSelect) {
+    const initialRate = parseFloat(speedSelect.value);
+    currentRate = Number.isFinite(initialRate) ? initialRate : 1.0;
+
+    speedSelect.addEventListener("change", () => {
+        const nextRate = parseFloat(speedSelect.value);
+        currentRate = Number.isFinite(nextRate) ? nextRate : 1.0;
+
+        if (playbackState === "playing") {
+            speakSentence(currentSentenceIndex);
+            return;
+        }
+
+        if (playbackState === "paused" && pauseMode === "native") {
+            try { speechSynthesis.cancel(); } catch {}
+            pauseMode = "fallback";
+        }
+    });
 }
 
 if (playBtn && output) {
