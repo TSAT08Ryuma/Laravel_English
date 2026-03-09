@@ -1,19 +1,23 @@
 const playBtn = document.getElementById("play");
 const output = document.getElementById("output");
 const speedSelect = document.getElementById("speed_rate");
+const voiceSelect = document.getElementById("voice_select");
 
 let currentUtterance = null;
 let sentences = [];
+let voices = [];
 
 const PLAY_LABEL = "\u25B6 \u518d\u751f";
 const PAUSE_LABEL = "\u23F8 \u4e00\u6642\u505c\u6b62";
 const RESUME_LABEL = "\u25B6 \u518d\u958b";
+const VOICE_STORAGE_KEY = "reading_voice_uri";
 
 let playbackState = "idle"; // idle | playing | paused
 let pauseMode = "none"; // none | native | fallback
 let currentText = "";
 let currentSentenceIndex = 0;
 let currentRate = 1.0;
+let selectedVoiceURI = "";
 
 function escapeHtml(s) {
     return s
@@ -68,6 +72,64 @@ function finalizePlayback(resetIndex = true) {
     setPlayButtonLabel(PLAY_LABEL);
 }
 
+function getStoredVoiceURI() {
+    try {
+        return localStorage.getItem(VOICE_STORAGE_KEY) || "";
+    } catch {
+        return "";
+    }
+}
+
+function setStoredVoiceURI(uri) {
+    try {
+        localStorage.setItem(VOICE_STORAGE_KEY, uri || "");
+    } catch {}
+}
+
+function getSelectedVoice() {
+    if (!selectedVoiceURI || !voices.length) return null;
+    return voices.find((v) => v.voiceURI === selectedVoiceURI) || null;
+}
+
+function refreshVoices() {
+    if (!voiceSelect || typeof speechSynthesis === "undefined") return;
+
+    const found = speechSynthesis.getVoices() || [];
+    if (!found.length) return;
+
+    voices = [...found].sort((a, b) => {
+        const aEn = a.lang && a.lang.toLowerCase().startsWith("en") ? 0 : 1;
+        const bEn = b.lang && b.lang.toLowerCase().startsWith("en") ? 0 : 1;
+        if (aEn !== bEn) return aEn - bEn;
+        return `${a.lang} ${a.name}`.localeCompare(`${b.lang} ${b.name}`);
+    });
+
+    const remembered = selectedVoiceURI || getStoredVoiceURI();
+
+    voiceSelect.innerHTML = "";
+    const autoOption = document.createElement("option");
+    autoOption.value = "";
+    autoOption.textContent = "Default";
+    voiceSelect.appendChild(autoOption);
+
+    voices.forEach((voice) => {
+        const option = document.createElement("option");
+        option.value = voice.voiceURI;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+    });
+
+    if (remembered && voices.some((v) => v.voiceURI === remembered)) {
+        selectedVoiceURI = remembered;
+    } else {
+        const firstEnglish = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("en"));
+        selectedVoiceURI = firstEnglish ? firstEnglish.voiceURI : "";
+    }
+
+    voiceSelect.value = selectedVoiceURI;
+    setStoredVoiceURI(selectedVoiceURI);
+}
+
 function speakSentence(index) {
     if (!currentText || !sentences.length) {
         finalizePlayback(true);
@@ -81,8 +143,12 @@ function speakSentence(index) {
     currentSentenceIndex = index;
 
     const utterance = new SpeechSynthesisUtterance(sentences[index]);
-    utterance.lang = "en-US";
+    const selectedVoice = getSelectedVoice();
+    utterance.lang = selectedVoice ? selectedVoice.lang : "en-US";
     utterance.rate = currentRate;
+    if (selectedVoice) {
+        utterance.voice = selectedVoice;
+    }
 
     utterance.onstart = () => {
         highlightSentence(index);
@@ -128,6 +194,28 @@ if (speedSelect) {
             pauseMode = "fallback";
         }
     });
+}
+
+if (voiceSelect) {
+    voiceSelect.addEventListener("change", () => {
+        selectedVoiceURI = voiceSelect.value || "";
+        setStoredVoiceURI(selectedVoiceURI);
+
+        if (playbackState === "playing") {
+            speakSentence(currentSentenceIndex);
+            return;
+        }
+
+        if (playbackState === "paused" && pauseMode === "native") {
+            try { speechSynthesis.cancel(); } catch {}
+            pauseMode = "fallback";
+        }
+    });
+}
+
+if (typeof speechSynthesis !== "undefined") {
+    refreshVoices();
+    speechSynthesis.addEventListener("voiceschanged", refreshVoices);
 }
 
 if (playBtn && output) {

@@ -48,6 +48,10 @@
 
             <div class="mb-3 flex flex-wrap items-center gap-3">
                 <button id="play" type="button" class="px-4 py-2 bg-gray-800 text-white rounded">▶ 再生</button>
+                <label for="voice_select" class="text-sm text-gray-700">Voice</label>
+                <select id="voice_select" class="border rounded px-2 py-1 text-sm max-w-[280px]">
+                    <option value="">Loading voices...</option>
+                </select>
                 <label for="speed_rate" class="text-sm text-gray-700">Speed</label>
                 <select id="speed_rate" class="border rounded px-2 py-1 text-sm">
                     <option value="0.8">0.8x</option>
