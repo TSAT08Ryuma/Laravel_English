@@ -61,7 +61,7 @@
                 </select>
             </div>
 
-            <pre id="output" class="whitespace-pre-wrap text-sm">{{ $result ?? '' }}</pre>
+            <pre id="output" class="whitespace-pre-wrap text-[17px] sm:text-sm leading-relaxed sm:leading-normal px-1 sm:px-0">{{ $result ?? '' }}</pre>
 
             @isset($result)
                 <form method="POST" action="{{ route('reading.store') }}" class="mt-4">
