@@ -36,7 +36,7 @@
                 </select>
 
                 <div class="mt-3 flex items-center gap-3">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">生成する</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">生成</button>
                     <span class="text-xs text-gray-600">本日残：{{ $remaining ?? 30 }}</span>
                 </div>
 
@@ -44,11 +44,13 @@
         </div>
 
         <div class="bg-white p-4 sm:p-6 shadow sm:rounded-lg">
-            <h3 class="font-semibold mb-2">再生ボタン</h3>
+            <h3 class="font-semibold mb-2">再生エリア</h3>
 
             <div class="mb-3 flex flex-wrap items-center gap-3">
                 <button id="play" type="button" class="px-4 py-2 bg-gray-800 text-white rounded">▶ 再生</button>
-                <label for="voice_select" class="text-sm text-gray-700">Voice</label>
+                <button id="next_story" type="button" class="px-3 py-2 bg-gray-600 text-white rounded">Next</button>
+                <button id="random_story" type="button" class="px-3 py-2 bg-gray-500 text-white rounded">Random</button>
+                <label for="voice_select" class="text-sm text-gray-700">音声</label>
                 <select id="voice_select" class="border rounded px-2 py-1 text-sm max-w-[280px]">
                     <option value="">Loading voices...</option>
                 </select>

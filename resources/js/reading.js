@@ -1,4 +1,6 @@
 const playBtn = document.getElementById("play");
+const nextBtn = document.getElementById("next_story");
+const randomBtn = document.getElementById("random_story");
 const output = document.getElementById("output");
 const speedSelect = document.getElementById("speed_rate");
 const voiceSelect = document.getElementById("voice_select");
@@ -18,6 +20,7 @@ let currentText = "";
 let currentSentenceIndex = 0;
 let currentRate = 1.0;
 let selectedVoiceURI = "";
+let currentHistoryIndex = -1;
 
 function escapeHtml(s) {
     return s
@@ -55,8 +58,7 @@ function highlightSentence(index) {
 }
 
 function setPlayButtonLabel(label) {
-    if (!playBtn) return;
-    playBtn.textContent = label;
+    if (playBtn) playBtn.textContent = label;
 }
 
 function finalizePlayback(resetIndex = true) {
@@ -130,6 +132,23 @@ function refreshVoices() {
     setStoredVoiceURI(selectedVoiceURI);
 }
 
+function getHistoryRows() {
+    return Array.from(document.querySelectorAll("tr[data-content]"));
+}
+
+function loadHistoryByIndex(index) {
+    const rows = getHistoryRows();
+    if (!rows.length || !output) return;
+
+    const safeIndex = ((index % rows.length) + rows.length) % rows.length;
+    const text = rows[safeIndex].dataset.content || "";
+    if (!text) return;
+
+    renderSentences(text);
+    stopTTS();
+    currentHistoryIndex = safeIndex;
+}
+
 function speakSentence(index) {
     if (!currentText || !sentences.length) {
         finalizePlayback(true);
@@ -155,12 +174,16 @@ function speakSentence(index) {
     };
 
     utterance.onend = () => {
+        // Ignore stale callbacks from canceled/replaced utterances.
+        if (currentUtterance !== utterance) return;
         if (playbackState !== "playing") return;
         currentSentenceIndex = (index + 1) % sentences.length;
         speakSentence(currentSentenceIndex);
     };
 
     utterance.onerror = () => {
+        // Ignore stale callbacks from canceled/replaced utterances.
+        if (currentUtterance !== utterance) return;
         if (playbackState !== "playing") return;
         finalizePlayback(false);
     };
@@ -213,6 +236,33 @@ if (voiceSelect) {
     });
 }
 
+if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+        const rows = getHistoryRows();
+        if (!rows.length) return;
+        const nextIndex = currentHistoryIndex < 0 ? 0 : (currentHistoryIndex + 1) % rows.length;
+        loadHistoryByIndex(nextIndex);
+    });
+}
+
+if (randomBtn) {
+    randomBtn.addEventListener("click", () => {
+        const rows = getHistoryRows();
+        if (!rows.length) return;
+
+        if (rows.length === 1) {
+            loadHistoryByIndex(0);
+            return;
+        }
+
+        let rand = currentHistoryIndex;
+        while (rand === currentHistoryIndex) {
+            rand = Math.floor(Math.random() * rows.length);
+        }
+        loadHistoryByIndex(rand);
+    });
+}
+
 if (typeof speechSynthesis !== "undefined") {
     refreshVoices();
     speechSynthesis.addEventListener("voiceschanged", refreshVoices);
@@ -259,7 +309,7 @@ if (playBtn && output) {
 
             playbackState = "playing";
             setPlayButtonLabel(PAUSE_LABEL);
-            speakSentence(currentSentenceIndex); // restart from current sentence head
+            speakSentence(currentSentenceIndex);
             return;
         }
 
@@ -271,7 +321,32 @@ if (playBtn && output) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll("tr[data-content]").forEach((tr) => {
+    if (output) {
+        output.addEventListener("click", (e) => {
+            const span = e.target.closest(".sent");
+            if (!span) return;
+
+            const idx = Number.parseInt(span.dataset.i || "", 10);
+            if (Number.isNaN(idx)) return;
+
+            const text = (output.textContent || "").trim();
+            if (!text) return;
+
+            // Ensure clean restart even when already speaking.
+            try { speechSynthesis.cancel(); } catch {}
+
+            // Re-sync source text/sentences to avoid stale state.
+            currentText = text;
+            renderSentences(text);
+
+            playbackState = "playing";
+            pauseMode = "none";
+            setPlayButtonLabel(PAUSE_LABEL);
+            speakSentence(idx);
+        });
+    }
+
+    getHistoryRows().forEach((tr, idx) => {
         tr.addEventListener("click", (e) => {
             if (e.target.closest("form")) return;
 
@@ -280,9 +355,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             renderSentences(text);
             stopTTS();
+            currentHistoryIndex = idx;
         });
     });
 });
 
 window.addEventListener("beforeunload", stopTTS);
 window.addEventListener("pagehide", stopTTS);
+
+
+
+
+
