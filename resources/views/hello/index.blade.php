@@ -88,7 +88,6 @@
                             <tr class="bg-gray-100">
                                 <th class="p-2 border text-left">ID</th>
                                 <th class="p-2 border text-left">Title</th>
-                                <th class="p-2 border text-left">Content</th>
                                 <th class="p-2 border text-left">Delete</th>
                             </tr>
                         </thead>
@@ -97,7 +96,6 @@
                                 <tr data-content="{{ $reading->content }}">
                                     <td class="p-2 border">{{ $loop->iteration }}</td>
                                     <td class="p-2 border">{{ $reading->title }}</td>
-                                    <td class="p-2 border whitespace-pre-wrap">{{ $reading->content }}</td>
                                     <td class="p-2 border">
                                         <form method="POST" action="{{ route('reading.destroy', $reading) }}">
                                             @csrf
