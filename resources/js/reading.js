@@ -1,4 +1,4 @@
-const playBtn = document.getElementById("play");
+﻿const playBtn = document.getElementById("play");
 const nextBtn = document.getElementById("next_story");
 const randomBtn = document.getElementById("random_story");
 const output = document.getElementById("output");
@@ -9,9 +9,9 @@ let currentUtterance = null;
 let sentences = [];
 let voices = [];
 
-const PLAY_LABEL = "\u25B6 \u518d\u751f";
-const PAUSE_LABEL = "\u23F8 \u4e00\u6642\u505c\u6b62";
-const RESUME_LABEL = "\u25B6 \u518d\u958b";
+const PLAY_LABEL = "▶";
+const PAUSE_LABEL = "||";
+const RESUME_LABEL = "▶";
 const VOICE_STORAGE_KEY = "reading_voice_uri";
 
 let playbackState = "idle"; // idle | playing | paused
@@ -58,7 +58,12 @@ function highlightSentence(index) {
 }
 
 function setPlayButtonLabel(label) {
-    if (playBtn) playBtn.textContent = label;
+    if (!playBtn) return;
+
+    playBtn.textContent = label;
+    const ariaLabel = label === PAUSE_LABEL ? "一時停止" : "再生";
+    playBtn.setAttribute("aria-label", ariaLabel);
+    playBtn.setAttribute("title", ariaLabel);
 }
 
 function finalizePlayback(resetIndex = true) {
@@ -362,6 +367,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.addEventListener("beforeunload", stopTTS);
 window.addEventListener("pagehide", stopTTS);
+
+
+
 
 
 
