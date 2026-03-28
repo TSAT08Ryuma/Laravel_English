@@ -10,14 +10,12 @@
             <div class="bg-green-100 text-green-800 p-3 rounded">
                 {{ session('status') }}
             </div>
-        @endif
-
-        <div class="bg-white p-4 sm:p-6 shadow sm:rounded-lg">
+        @endif        <div class="bg-white p-4 sm:p-6 shadow sm:rounded-lg">
             <span class="text-xs text-gray-600">本日残：{{ $remaining ?? 30 }}</span>
 
             <details class="mt-3 rounded-lg border border-gray-200 bg-gray-50">
                 <summary class="cursor-pointer px-4 py-3 text-sm font-medium text-gray-800">
-                    生成したい英文のテーマを入力する（例：イラン革命防衛隊について）
+                    生成したい英文のテーマを入力する（例：スキピオ・アエミリアヌスについて）
                 </summary>
 
                 <form id="analyze-form" method="POST" action="{{ route('reading.analyze') }}" class="space-y-4 border-t border-gray-200 bg-white px-4 py-4">
@@ -51,10 +49,8 @@
                     </div>
                 </form>
             </details>
-        </div>
-
-        <div class="bg-white p-4 sm:p-6 shadow sm:rounded-lg">
-            <h3 class="font-semibold mb-2">再生エリア</h3>
+        </div>        <div class="bg-white p-4 sm:p-6 shadow sm:rounded-lg">
+            <h3 class="font-semibold mb-2"></h3>
 
             <div class="mb-3 flex flex-wrap items-center gap-2">
                 <label for="voice_select" class="text-sm text-gray-700">音声</label>
@@ -90,38 +86,50 @@
         </div>
 
         @if(isset($readings) && $readings->count())
-            <div class="bg-white p-4 sm:p-6 shadow sm:rounded-lg">
-                <h3 class="font-semibold mb-3">生成作品</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm border min-w-[700px]">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="p-2 border text-left">ID</th>
-                                <th class="p-2 border text-left">Title</th>
-                                <th class="p-2 border text-left">Delete</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($readings as $reading)
-                                <tr data-content="{{ $reading->content }}">
-                                    <td class="p-2 border">{{ $loop->iteration }}</td>
-                                    <td class="p-2 border">{{ $reading->title }}</td>
-                                    <td class="p-2 border">
-                                        <form method="POST" action="{{ route('reading.destroy', $reading) }}">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded">削除</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        @endif
+    <div class="bg-white p-4 sm:p-6 shadow sm:rounded-lg">
+        <h3 class="font-semibold mb-3">クリックして再生エリアへ</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm border min-w-[700px]">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="p-2 border text-left">Title</th>
+                        <th class="p-2 border text-left">Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($readings as $reading)
+                        <tr
+                            data-content="{{ $reading->content }}"
+                            class="group cursor-pointer transition-colors duration-150 hover:bg-amber-50"
+                        >
+                            <td class="border p-2">
+                                <div class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-2 py-3 shadow-sm transition-all duration-150 group-hover:border-amber-200 group-hover:bg-white">
+                                    <div class="min-w-0 font-medium text-gray-900">{{ $reading->title }}</div>
+                                    <span class="history-active-badge hidden shrink-0 rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">選択中</span>
+                                </div>
+                            </td>
+                            <td class="border p-2 align-middle">
+                                <form method="POST" action="{{ route('reading.destroy', $reading) }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded">削除</button>
+                                </form>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+@endif
     </div>
 </x-app-layout>
+
+
+
+
+
+
 
 
 

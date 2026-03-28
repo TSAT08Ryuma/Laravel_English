@@ -9,9 +9,9 @@ let currentUtterance = null;
 let sentences = [];
 let voices = [];
 
-const PLAY_LABEL = "▶";
+const PLAY_LABEL = "\u25B6";
 const PAUSE_LABEL = "||";
-const RESUME_LABEL = "▶";
+const RESUME_LABEL = "\u25B6";
 const VOICE_STORAGE_KEY = "reading_voice_uri";
 
 let playbackState = "idle"; // idle | playing | paused
@@ -41,7 +41,7 @@ function renderSentences(text) {
     if (!output) return;
     sentences = splitIntoSentences(text);
     output.innerHTML = sentences
-        .map((s, i) => `<span class="sent" data-i="${i}">${escapeHtml(s)}</span> `)
+                 .map((s, i) => `<span class="sent" data-i="${i}">${escapeHtml(s)}</span> `)
         .join("");
 }
 
@@ -49,11 +49,14 @@ function clearHighlight() {
     document.querySelectorAll(".sent").forEach((s) => s.classList.remove("active"));
 }
 
+
 function highlightSentence(index) {
     const spans = document.querySelectorAll(".sent");
     if (!spans.length) return;
 
-    spans.forEach((s) => s.classList.remove("active"));
+    spans.forEach((s) => {
+        s.classList.remove("active");
+    });
     if (spans[index]) spans[index].classList.add("active");
 }
 
@@ -141,6 +144,26 @@ function getHistoryRows() {
     return Array.from(document.querySelectorAll("tr[data-content]"));
 }
 
+function updateActiveHistoryRow() {
+    const rows = getHistoryRows();
+
+    rows.forEach((row, idx) => {
+        const isActive = idx === currentHistoryIndex;
+        row.classList.toggle("bg-amber-50", isActive);
+        row.classList.toggle("shadow-sm", isActive);
+
+        const card = row.querySelector("td > div");
+        if (card) {
+            card.classList.toggle("ring-1", isActive);
+            card.classList.toggle("ring-amber-300", isActive);
+            card.classList.toggle("bg-amber-50", isActive);
+        }
+
+        const badge = row.querySelector(".history-active-badge");
+        if (badge) badge.classList.toggle("hidden", !isActive);
+    });
+}
+
 function loadHistoryByIndex(index) {
     const rows = getHistoryRows();
     if (!rows.length || !output) return;
@@ -151,7 +174,11 @@ function loadHistoryByIndex(index) {
 
     renderSentences(text);
     stopTTS();
+    currentText = text;
+    currentSentenceIndex = 0;
     currentHistoryIndex = safeIndex;
+    updateActiveHistoryRow();
+    highlightSentence(0);
 }
 
 function speakSentence(index) {
@@ -360,13 +387,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
             renderSentences(text);
             stopTTS();
+            currentText = text;
+            currentSentenceIndex = 0;
             currentHistoryIndex = idx;
+            updateActiveHistoryRow();
+            highlightSentence(0);
         });
     });
 });
 
 window.addEventListener("beforeunload", stopTTS);
 window.addEventListener("pagehide", stopTTS);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
