@@ -49,7 +49,41 @@
                     </div>
                 </form>
             </details>
-        </div>        <div class="bg-white p-4 sm:p-6 shadow sm:rounded-lg">
+        </div>
+
+        <style>
+            #output .sent {
+                cursor: pointer;
+                border-radius: 0.2rem;
+                padding: 0 0.08rem;
+                text-decoration: none;
+                transition: background-color 140ms ease, text-decoration-color 140ms ease, box-shadow 140ms ease;
+            }
+
+            #output .sent:hover {
+                background: rgba(253, 230, 138, 0.28);
+                text-decoration-line: underline;
+                text-decoration-style: dotted;
+                text-decoration-color: rgba(217, 119, 6, 0.9);
+                text-underline-offset: 0.2em;
+            }
+
+            #output .sent.active {
+                background: rgba(253, 230, 138, 0.82);
+                text-decoration-line: underline;
+                text-decoration-style: dotted;
+                text-decoration-color: rgba(180, 83, 9, 0.98);
+                text-decoration-thickness: 0.14em;
+                text-underline-offset: 0.22em;
+                box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.18);
+            }
+
+            tr.bg-amber-50 .history-inline-delete {
+                display: inline-flex;
+            }
+        </style>
+
+        <div class="bg-white p-4 sm:p-6 shadow sm:rounded-lg">
             <h3 class="font-semibold mb-2"></h3>
 
             <div class="mb-3 flex flex-wrap items-center gap-2">
@@ -87,13 +121,12 @@
 
         @if(isset($readings) && $readings->count())
     <div class="bg-white p-4 sm:p-6 shadow sm:rounded-lg">
-        <h3 class="font-semibold mb-3">クリックして再生エリアへ</h3>
+        <h3 class="font-semibold mb-3"></h3>
         <div class="overflow-x-auto">
-            <table class="w-full text-sm border min-w-[700px]">
+            <table class="w-full text-sm border">
                 <thead>
                     <tr class="bg-gray-100">
                         <th class="p-2 border text-left">Title</th>
-                        <th class="p-2 border text-left">Delete</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -105,15 +138,15 @@
                             <td class="border p-2">
                                 <div class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-2 py-3 shadow-sm transition-all duration-150 group-hover:border-amber-200 group-hover:bg-white">
                                     <div class="min-w-0 font-medium text-gray-900">{{ $reading->title }}</div>
-                                    <span class="history-active-badge hidden shrink-0 rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">選択中</span>
+                                    <div class="flex shrink-0 items-center gap-2">
+                                        <span class="history-active-badge hidden rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">選択中</span>
+                                        <form method="POST" action="{{ route('reading.destroy', $reading) }}" class="history-inline-delete hidden">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="rounded border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50">削除</button>
+                                        </form>
+                                    </div>
                                 </div>
-                            </td>
-                            <td class="border p-2 align-middle">
-                                <form method="POST" action="{{ route('reading.destroy', $reading) }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded">削除</button>
-                                </form>
                             </td>
                         </tr>
                     @endforeach
@@ -124,6 +157,21 @@
 @endif
     </div>
 </x-app-layout>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

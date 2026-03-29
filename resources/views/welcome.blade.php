@@ -55,23 +55,33 @@
             </div>
 
             <div class="mx-auto mt-8 mb-5 flex max-w-lg gap-3">
-                <a
-                    href="{{ route('login') }}"
-                    class="flex min-h-[52px] w-full items-center justify-center whitespace-nowrap rounded-2xl bg-white px-4 py-4 text-base font-semibold text-gray-900 transition hover:bg-gray-100"
-                >
-                    Log in
-                </a>
-
-                @if (Route::has('register'))
+                @auth
                     <a
-                        href="{{ route('register') }}"
-                        class="flex min-h-[52px] w-full items-center justify-center whitespace-nowrap rounded-2xl border border-white/25 bg-white/12 px-4 py-4 text-base font-medium text-white transition hover:bg-white/18"
+                        href="{{ route('reading.index') }}"
+                        class="flex min-h-[52px] w-full items-center justify-center whitespace-nowrap rounded-2xl bg-white px-4 py-4 text-base font-semibold text-gray-900 transition hover:bg-gray-100"
                     >
-                        Register
+                        学習を始める
                     </a>
-                @endif
+                @else
+                    <a
+                        href="{{ route('login') }}"
+                        class="flex min-h-[52px] w-full items-center justify-center whitespace-nowrap rounded-2xl bg-white px-4 py-4 text-base font-semibold text-gray-900 transition hover:bg-gray-100"
+                    >
+                        Log in
+                    </a>
+
+                    @if (Route::has('register'))
+                        <a
+                            href="{{ route('register') }}"
+                            class="flex min-h-[52px] w-full items-center justify-center whitespace-nowrap rounded-2xl border border-white/25 bg-white/12 px-4 py-4 text-base font-medium text-white transition hover:bg-white/18"
+                        >
+                            Register
+                        </a>
+                    @endif
+                @endauth
             </div>
         </section>
     </main>
 </body>
 </html>
+
