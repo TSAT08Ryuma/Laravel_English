@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
@@ -35,6 +36,14 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        $todayCount = User::whereDate('created_at', now()->toDateString())->count();
+
+        if ($todayCount >= 1) {
+            throw ValidationException::withMessages([
+                'email' => '現在はテスト運用中のため、本日の新規登録上限に達しました。', 
+            ]);
+        }
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -49,3 +58,6 @@ class RegisteredUserController extends Controller
 
     }
 }
+
+
+
